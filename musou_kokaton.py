@@ -288,13 +288,17 @@ class Start:
         スペースキー入力があるまで動作を停止する
         hキー入力でハードモード化（仮）
         """
+        pg.mixer.music.load("fig/Battle_standby.mp3")
+        pg.mixer.music.play(-1)
         while True:
             self.clock.tick(50)  # 処理落ち防止
             for event in pg.event.get():
                 if event.type == pg.QUIT:  # 右上の×が押されたら
                     self.running = False  
+                    pg.mixer.music.stop()
                     return
                 if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:  # スペースキーが押されたら
+                    pg.mixer.music.stop()
                     return
                 # elif event.type == pg.KEYDOWN and event.key == pg.K_h:
                 #     waiting = False
@@ -328,6 +332,9 @@ def main():
     if start.running is not True:
         return
     
+    pg.mixer.music.load("fig/bossbgm.mp3")  # 戦闘BGMの設定
+    pg.mixer.music.play(-1)  # 戦闘BGMを無限ループで再生
+    pg.mixer.music.set_volume(0.5)  # 戦闘BGMの音量を半分にする
     while True:
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
@@ -345,6 +352,7 @@ def main():
 
         screen.blit(go_img,go_rct)
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
+            pg.mixer.music.stop()  # 戦闘BGMの停止
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
             score.update(screen)
             pg.display.update()
@@ -369,6 +377,7 @@ def main():
 
 if __name__ == "__main__":
     pg.init()
+    pg.mixer.init()
     main()
     pg.quit()
     sys.exit()
