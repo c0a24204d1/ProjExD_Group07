@@ -249,6 +249,57 @@ class HP:
         screen.blit(self.txt,[WIDTH//2-140,HEIGHT-60])
 
 
+class Start:
+    """
+    起動時の画面に関するクラス
+    """
+    def __init__(self):
+        self.running = True
+        self.clock = pg.time.Clock()
+        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        #self.gamemode = "normal"
+
+    def show_start_screen(self):
+        """
+        起動時の画面を表示する
+        黒背景、文字
+        """
+        self.black = pg.Surface((WIDTH,HEIGHT))
+        self.black.fill((0,0,0))
+        self.rect = self.black.get_rect()
+        self.screen.blit(self.black,(0,0))
+        self.draw_text("UNDERKOKATON",96,(255,255,255),WIDTH/2,HEIGHT/2)
+        self.draw_text("Press Space to play",36,(255,255,255),WIDTH/2,HEIGHT/2+120)
+        pg.display.flip()
+        self.wait_for_key()
+
+    def draw_text(self, text:str, size:int, color:tuple, x:float, y:float):
+        """
+        テキストを表示するための関数
+        """
+        font = pg.font.SysFont(None, size)
+        text_surface = font.render(text, True, color)
+        text_rect = text_surface.get_rect()
+        text_rect.midtop = (x, y)
+        self.screen.blit(text_surface, text_rect)
+        
+    def wait_for_key(self):
+        """
+        スペースキー入力があるまで動作を停止する
+        hキー入力でハードモード化（仮）
+        """
+        while True:
+            self.clock.tick(50)  # 処理落ち防止
+            for event in pg.event.get():
+                if event.type == pg.QUIT:  # 右上の×が押されたら
+                    self.running = False  
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:  # スペースキーが押されたら
+                    return
+                # elif event.type == pg.KEYDOWN and event.key == pg.K_h:
+                #     waiting = False
+                #     self.gamemode = "hard"
+                    
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -272,6 +323,11 @@ def main():
     boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
     boss_rct = boss_img.get_rect()
     boss_rct.center = WIDTH//2,HEIGHT//2-180
+    start = Start()
+    start.show_start_screen()
+    if start.running is not True:
+        return
+    
     while True:
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
