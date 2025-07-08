@@ -98,7 +98,7 @@ class Bird(pg.sprite.Sprite):
             self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
-            self.image = self.imgs[self.dire]
+            # self.image = self.imgs[self.dire]
         screen.blit(self.image, self.rect)
 
 
@@ -249,19 +249,67 @@ class HP:
         screen.blit(self.txt,[WIDTH//2-140,HEIGHT-60])
 
 
+class BossHP:
+    """
+    ボスのHP
+    base=1200
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 30)
+        self.color = (255, 0, 0)
+        self.value = 1200
+        self.txt = self.font.render(f"HP: {self.value}/1200", 0, self.color)
+        self.image = pg.Surface((120,20))
+        pg.draw.rect(self.image,(255,0,0),(0,0,120,20))
+        self.image.set_alpha(255)
+        self.rect = self.image.get_rect()
+        self.rect2 = self.txt.get_rect()
+        self.rect.center = WIDTH//2, HEIGHT-600
+
+    def update(self, screen: pg.Surface):
+        self.image = pg.Surface((120,20))
+        pg.draw.rect(self.image,(255,0,0),(0,0,self.value//10,20))
+        self.image.set_alpha(255)
+        self.txt = self.font.render(f"HP: {self.value}/1200", 0, self.color)
+        screen.blit(self.image, self.rect)
+        screen.blit(self.txt,[WIDTH//2-240,HEIGHT-610])
+
+
+class Slash(pg.sprite.Sprite):
+    """
+    斬撃エフェクト
+    """
+    def __init__(self, life):
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/flash-effect.gif"), 0, 0.3)
+        self.image.set_alpha(255)  # 透明度
+        self.rect = self.image.get_rect()
+        self.rect.center = WIDTH//2,HEIGHT//2-180
+        self.life = life
+
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()  # 以下衝突検知・破壊処理
+
+
 def main():
-    pg.display.set_caption("真！こうかとん無双")
+    pg.display.set_caption("UNDERKOKATON")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
-    score = HP()
+    hp = HP()
+    bosshp = BossHP()
 
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
-
+    sla = pg.sprite.Group()
     tmr = 0
+    muteki=0
+    PLwaza=0
+    namida=0
     clock = pg.time.Clock()
     go_img=pg.Surface((WIDTH,HEIGHT))
     pg.draw.rect(go_img,(0,0,0),(0,0,WIDTH,HEIGHT))
@@ -272,15 +320,26 @@ def main():
     boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
     boss_rct = boss_img.get_rect()
     boss_rct.center = WIDTH//2,HEIGHT//2-180
+
     while True:
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE and PLwaza >=1:
+                bosshp.value -= 20
+                PLwaza=0
+                boss_img = pg.transform.rotozoom(pg.image.load(f"fig/8.png"), 0, 3)
+                namida=50
+                sla.add(Slash(50))
+                
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
+
+        if tmr%300 == 0 and tmr!=0:
+            PLwaza=1
 
         for emy in emys:
             if emy.state == "stop" and tmr%emy.interval == 0:
@@ -289,11 +348,42 @@ def main():
 
         screen.blit(go_img,go_rct)
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-            score.update(screen)
+            if muteki<0:
+                hp.value -= 2
+                muteki=30
+            else:
+                continue
+        
+        if muteki>0:
+            bird.image = pg.transform.laplacian(bird.image)
+        elif PLwaza>=1:
+            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hartSP.png"), 0, 0.02)
+        else:
+            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.02)
+
+        if hp.value<=0:
+            hp.value=0
+            bird.change_img(8, screen)
+            fonto=pg.font.Font(None,80)
+            txt = fonto.render("Game Over",True, (255,0,0))
+            screen.blit(txt,[WIDTH//2-150,HEIGHT//2])
+            hp.update(screen)
             pg.display.update()
-            time.sleep(2)
-            return
+            time.sleep(2)                
+            return  # gameover
+        
+        if bosshp.value<=0:
+            bosshp.value=0
+            fonto=pg.font.Font(None,80)
+            txt = fonto.render("Game Clear",True, (255,255,0))
+            screen.blit(txt,[WIDTH//2-150,HEIGHT//2])
+            hp.update(screen)
+            pg.display.update()
+            time.sleep(2)                
+            return  # gameclear
+        
+        if namida<0:
+            boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
 
         screen.blit(boss_img, boss_rct)
         bird.update(key_lst, screen)
@@ -305,9 +395,14 @@ def main():
         bombs.draw(screen)
         exps.update()
         exps.draw(screen)
-        score.update(screen)
+        hp.update(screen)
+        bosshp.update(screen)
+        sla.update()
+        sla.draw(screen)
         pg.display.update()
         tmr += 1
+        muteki-=1
+        namida-=1
         clock.tick(50)
 
 
