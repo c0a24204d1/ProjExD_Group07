@@ -184,10 +184,10 @@ class Beam2(pg.sprite.Sprite):
         """
         super().__init__()
         self.image = pg.transform.rotozoom(random.choice(__class__.imgs), -90, 3)  # 画像の角度と倍率を変えて生成する
-        self.rect = self.image.get_rect()  # ビーム画像をrect
         self.image.set_colorkey((0, 0, 0))  # 四隅の黒を透明化する
-        self.rect.center = random.randint(0, WIDTH), 0 #中心座標から横にランダムな位置を設定
-        self.x, self.y = 0, +6
+        self.rect = self.image.get_rect()  # ビーム画像をrect
+        self.rect.center = random.randint(0, WIDTH), 0  # 画像の上側からランダムな位置に出現
+        self.x, self.y = 0, +10  # 横と縦の進む速さ
 
     def update(self):
         """
@@ -346,7 +346,7 @@ def main():
                 if score.value <= 0:  # 0以下の場合
                     bird.change_img(8, screen)  # ハートが割れる画像に変える
                     score.update(screen)
-                    pg.display()
+                    pg.display.update()
                     time.sleep(2)  # 2秒間止まる
                     return
 
