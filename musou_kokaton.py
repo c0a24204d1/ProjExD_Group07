@@ -313,7 +313,7 @@ def main():
                 bombs.add(Bomb(emy, bird))
         screen.blit(go_img,go_rct)
 
-        if tmr % 7 == 0:  # 10フレームごとにビーム(ボス側)を発射
+        if tmr % 10 == 0:  # 10フレームごとにビーム(ボス側)を発射
             beam_B2.add(Beam2())
         screen.blit(go_img,go_rct)
 
