@@ -223,6 +223,23 @@ class Enemy(pg.sprite.Sprite):
         self.rect.move_ip(self.vx, self.vy)
 
 
+class BossBall(pg.sprite.Sprite):  # 追加：ボスの即死球クラス
+    def __init__(self, boss_rct: pg.Rect, bird: Bird):
+        super().__init__()
+        rad = 30
+        self.image = pg.Surface((2*rad, 2*rad))
+        pg.draw.circle(self.image, (0, 0, 0), (rad, rad), rad)
+        self.image.set_colorkey((0, 0, 0))
+        pg.draw.circle(self.image, (255, 0, 0), (rad, rad), rad, 5)
+        self.rect = self.image.get_rect(center=boss_rct.center)
+        self.vx, self.vy = calc_orientation(self.rect, bird.rect)
+        self.speed = 2
+
+    def update(self):
+        self.rect.move_ip(self.speed * self.vx, self.speed * self.vy)
+        if check_bound(self.rect) != (True, True):
+            self.kill()
+
 class HP:
     """
     プレイヤーHP
@@ -260,6 +277,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    bossballs = pg.sprite.Group()
 
     tmr = 0
     clock = pg.time.Clock()
@@ -286,6 +304,8 @@ def main():
             if emy.state == "stop" and tmr%emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
+        if tmr % 300 == 0:
+            bossballs.add(BossBall(boss_rct, bird))
 
         screen.blit(go_img,go_rct)
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
@@ -294,6 +314,15 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+        
+        for ball in pg.sprite.spritecollide(bird, bossballs, True):  # 追加：即死球衝突
+            score.value=0
+            bird.change_img(8, screen)
+            score.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
+
 
         screen.blit(boss_img, boss_rct)
         bird.update(key_lst, screen)
@@ -303,6 +332,8 @@ def main():
         emys.draw(screen)
         bombs.update()
         bombs.draw(screen)
+        bossballs.update()         # 追加
+        bossballs.draw(screen)     # 追加
         exps.update()
         exps.draw(screen)
         score.update(screen)
