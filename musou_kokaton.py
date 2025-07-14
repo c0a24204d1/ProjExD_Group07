@@ -182,7 +182,7 @@ class Beam2(pg.sprite.Sprite):
     imgs = [pg.image.load("fig/beam.png")]
     def __init__(self):
         """
-        着弾前のビームに関するクラス
+        ビーム画像Surfaceを生成する
         """
         super().__init__()
         self.image = pg.transform.rotozoom(random.choice(__class__.imgs), -90, 3) #画像の角度と倍率を変えて生成する
@@ -309,27 +309,30 @@ def main():
                 return 0
         screen.blit(bg_img, [0, 0])
 
-        # if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
-        #     emys.add(Enemy())
-
-        # for emy in emys:
-        #     if emy.state == "stop" and tmr%emy.interval == 0:
-        #         # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
-        #         bombs.add(Bomb(emy, bird))
-        # screen.blit(go_img,go_rct)
+        if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
+            emys.add(Enemy())
+        for emy in emys:
+            if emy.state == "stop" and tmr%emy.interval == 0:# 敵機が停止状態に入ったら，intervalに応じて爆弾投下
+                bombs.add(Bomb(emy, bird))
+        screen.blit(go_img,go_rct)
 
         if tmr % 7 == 0: #10フレームごとにビーム(ボス側)を発射
             beam_B2.add(Beam2())
         screen.blit(go_img,go_rct)
 
-        for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-            
-            score.value -= 5
-            if score.value <= 0:
-                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+        for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト 
+            if bird.status == "normal": #無敵状態でない場合
+                score.value -= 5
+
+            if score.value > 0: #HPが残っている場合
+                bird.status = "hyper" #無敵状態に切り替える
+                bird.hyper_life = 500 #500フレームの時間与える
+
+            if score.value <= 0:            #0以下になった場合
+                bird.change_img(8, screen)  #ハートが割れる画像に変える
                 score.update(screen)
                 pg.display.update()
-                time.sleep(2)
+                time.sleep(2)               #2秒間止まる
                 return
               
         for beam2 in pg.sprite.spritecollide(bird, beam_B2, True):
