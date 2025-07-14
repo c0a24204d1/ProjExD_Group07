@@ -72,8 +72,8 @@ class Bird(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 10
-        self.status = "normal"
-        self.hyper_life = 0
+        self.status = "normal"  # ハートの状態を設定(通常状態)
+        self.hyper_life = 0  # 無敵時間の設定
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -178,17 +178,17 @@ class Beam2(pg.sprite.Sprite):
     """
     ビームに関するクラス2
     """
-    imgs = [pg.image.load("fig/beam.png")]
+    imgs = [pg.image.load("fig/beam.png")] # ビーム画像のsurface
     def __init__(self):
         """
         ビーム画像Surfaceを生成する
         """
         super().__init__()
         self.image = pg.transform.rotozoom(random.choice(__class__.imgs), -90, 3)  # 画像の角度と倍率を変えて生成する
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect()  # ビーム画像のrect
         self.image.set_colorkey((0, 0, 0))  # 四隅の黒を透明化する
-        self.rect.center = random.randint(0, WIDTH), 0
-        self.x, self.y = 0, +6
+        self.rect.center = random.randint(0, WIDTH), 0  # 中心座標から横にランダムの位置を設定
+        self.x, self.y = +0, +6  
     
     def update(self):
         """
@@ -198,7 +198,8 @@ class Beam2(pg.sprite.Sprite):
         self.rect.move_ip(self.x, self.y)  # ビームの速度に応じて位置を移動させる
         if self.rect.bottom > HEIGHT:  # 画面の下に着いたら
             self.kill()  # ビームを消す
-      
+
+
 class Explosion(pg.sprite.Sprite):
     """
     爆発に関するクラス
@@ -225,6 +226,7 @@ class Explosion(pg.sprite.Sprite):
         self.image = self.imgs[self.life//10%2]
         if self.life < 0:
             self.kill()
+
 
 class Enemy(pg.sprite.Sprite):
     """
@@ -253,6 +255,7 @@ class Enemy(pg.sprite.Sprite):
             self.state = "stop"
         self.rect.move_ip(self.vx, self.vy)
 
+
 class HP:
     """
     プレイヤーHP
@@ -277,6 +280,7 @@ class HP:
         self.txt = self.font.render(f"HP: {self.value}/30", 0, self.color)
         screen.blit(self.image, self.rect)
         screen.blit(self.txt,[WIDTH//2-140,HEIGHT-60])
+
 
 def main():
     pg.display.set_caption("真！こうかとん無双")
@@ -319,7 +323,7 @@ def main():
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト 
             if bird.status == "normal":  # 無敵状態でない場合
-                score.value -= 5
+                score.value -= 5 #爆弾に当たった場合5ダメージ受ける
 
             if score.value > 0:  # HPが残っている場合
                 bird.status = "hyper"  # 無敵状態に切り替える
