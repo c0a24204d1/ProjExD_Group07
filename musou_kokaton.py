@@ -214,7 +214,7 @@ class Beam4(pg.sprite.Sprite):
         self.image.set_colorkey((0, 0, 0))  # 四隅の黒を透明化する
         self.rect = self.image.get_rect()  # ビーム画像のrect
         self.rect.center = (WIDTH, random.randint(50, HEIGHT - 50))  # 右端からランダムの位置に出現
-        self.x, self.y = -10, 0  # # 左の方に移動  
+        self.x, self.y = -10, 0  # 左の方に移動  
           
     def update(self):
         """
@@ -352,7 +352,7 @@ def main():
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # ハートと衝突した爆弾リスト 
             if bird.status == "normal":  # 無敵状態でない場合
-                score.value -= 5 #爆弾に当たった場合5ダメージ受ける
+                score.value -= 5  # 爆弾に当たった場合5ダメージ受ける
 
             if score.value > 0:  # HPが残っている場合
                 bird.status = "hyper"  # 無敵状態に切り替える
