@@ -174,29 +174,55 @@ class Beam(pg.sprite.Sprite):
             self.kill()
 
 
-class Beam2(pg.sprite.Sprite):
+class Beam3(pg.sprite.Sprite):
     """
-    ビームに関するクラス2
+    ビームに関するクラス3
     """
-    imgs = [pg.image.load("fig/beam.png")] # ビーム画像のsurface
+    imgs = [pg.image.load("fig/beam.png")]  # ビーム画像のsurface
     def __init__(self):
         """
         ビーム画像Surfaceを生成する
         """
         super().__init__()
-        self.image = pg.transform.rotozoom(random.choice(__class__.imgs), -90, 3)  # 画像の角度と倍率を変えて生成する
-        self.rect = self.image.get_rect()  # ビーム画像のrect
+        self.image = pg.transform.rotozoom(random.choice(__class__.imgs), -180, 3)  # 画像の角度と倍率を変えて生成する
         self.image.set_colorkey((0, 0, 0))  # 四隅の黒を透明化する
-        self.rect.center = random.randint(0, WIDTH), 0  # 中心座標から横にランダムの位置を設定
-        self.x, self.y = +0, +6  
-    
+        self.rect = self.image.get_rect()  # ビーム画像のrect
+        self.rect.center = (0, random.randint(50, HEIGHT - 50))  # 左側からランダムの位置を出現
+        self.x, self.y = +10, 0  # 右の方に移動 
+          
     def update(self):
         """
         ビームを速度ベクトルself.vx, self.vyに基づき移動させる
         引数 screen：画面Surface
         """  
         self.rect.move_ip(self.x, self.y)  # ビームの速度に応じて位置を移動させる
-        if self.rect.bottom > HEIGHT:  # 画面の下に着いたら
+        if self.rect.right > WIDTH:  # 画面の右に着いたら
+            self.kill()  # ビームを消す
+
+
+class Beam4(pg.sprite.Sprite):
+    """
+    ビームに関するクラス4
+    """
+    imgs = [pg.image.load("fig/beam.png")]  # ビーム画像のsurface
+    def __init__(self):
+        """
+        ビーム画像Surfaceを生成する
+        """
+        super().__init__()
+        self.image = pg.transform.rotozoom(random.choice(__class__.imgs), 0, 3)  # 画像の角度と倍率を変えて生成する
+        self.image.set_colorkey((0, 0, 0))  # 四隅の黒を透明化する
+        self.rect = self.image.get_rect()  # ビーム画像のrect
+        self.rect.center = (WIDTH, random.randint(50, HEIGHT - 50))  # 右端からランダムの位置に出現
+        self.x, self.y = -10, 0  # # 左の方に移動  
+          
+    def update(self):
+        """
+        ビームを速度ベクトルself.vx, self.vyに基づき移動させる
+        引数 screen：画面Surface
+        """  
+        self.rect.move_ip(self.x, self.y)  # ビームの速度に応じて位置を移動させる
+        if self.rect.left > WIDTH:  # 画面の左に着いたら
             self.kill()  # ビームを消す
 
 
@@ -267,7 +293,7 @@ class HP:
         self.value = 30
         self.txt = self.font.render(f"HP: {self.value}/30", 0, self.color)
         self.image = pg.Surface((60, 20))
-        pg.draw.rect(self.image,(255,255,0),(0,0,60,20))
+        pg.draw.rect(self.image,(255, 255, 0), (0, 0, 60, 20))
         self.image.set_alpha(255)
         self.rect = self.image.get_rect()
         self.rect2 = self.txt.get_rect()
@@ -275,7 +301,7 @@ class HP:
 
     def update(self, screen: pg.Surface):
         self.image = pg.Surface((60, 20))
-        pg.draw.rect(self.image,(255,255,0),(0,0,self.value*2,20))
+        pg.draw.rect(self.image,(255, 255, 0),(0, 0, self.value*2, 20))
         self.image.set_alpha(255)
         self.txt = self.font.render(f"HP: {self.value}/30", 0, self.color)
         screen.blit(self.image, self.rect)
@@ -292,11 +318,12 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
-    beam_B2 = pg.sprite.Group()  # グループオブジェクトを生成
+    beam_B3 = pg.sprite.Group()  # 左から右のビーム用のグループオブジェクトを生成
+    beam_B4 = pg.sprite.Group()  # 右から左のビーム用のグループオブジェクトを生成
     tmr = 0
     clock = pg.time.Clock()
     go_img=pg.Surface((WIDTH,HEIGHT))
-    pg.draw.rect(go_img,(0,0,0),(0,0,WIDTH,HEIGHT))
+    pg.draw.rect(go_img,(0, 0, 0),(0, 0, WIDTH,HEIGHT))
     go_img.set_alpha(255)
     go_rct = go_img.get_rect()
     go_rct.center=WIDTH//2,HEIGHT//2
@@ -315,13 +342,15 @@ def main():
         for emy in emys:
             if emy.state == "stop" and tmr%emy.interval == 0:  # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
-        screen.blit(go_img,go_rct)
+        
+        if tmr % 25 == 0:  # 25フレームごとに左側からビーム(ボス側)を発射
+            beam_B3.add(Beam3())
+        
+        if tmr % 20 == 0:  # 20フレームごとに右側からビーム(ボス側)を発射
+            beam_B4.add(Beam4())
+        screen.blit(go_img,go_rct)  # 画像を黒くする
 
-        if tmr % 10 == 0:  # 10フレームごとにビーム(ボス側)を発射
-            beam_B2.add(Beam2())
-        screen.blit(go_img,go_rct)
-
-        for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト 
+        for bomb in pg.sprite.spritecollide(bird, bombs, True):  # ハートと衝突した爆弾リスト 
             if bird.status == "normal":  # 無敵状態でない場合
                 score.value -= 5 #爆弾に当たった場合5ダメージ受ける
 
@@ -336,7 +365,7 @@ def main():
                 time.sleep(2)  # 2秒間止まる
                 return
               
-        for beam2 in pg.sprite.spritecollide(bird, beam_B2, True):
+        for beam3 in pg.sprite.spritecollide(bird, beam_B3, True):  # ハートと衝突したビームリスト
             if bird.status == "normal":  # 無敵状態でない場合
                 score.value -= 4  # ビームに当たった場合4ダメージ受ける
                 if score.value > 0:  # HPが残っている場合
@@ -350,6 +379,20 @@ def main():
                     time.sleep(2)  # 2秒間止まる
                     return
         
+        for beam4 in pg.sprite.spritecollide(bird, beam_B4, True):  # ハートと衝突したビームリスト
+            if bird.status == "normal":  # 無敵状態でない場合
+                score.value -= 4  # ビームに当たった場合4ダメージ受ける
+                if score.value > 0:  # HPが残っている場合
+                    bird.status = "hyper"  # 無敵状態に切り替える
+                    bird.hyper_life = 500  # 500フレームの時間与える
+   
+                if score.value <= 0:  # 0以下になった場合
+                    bird.change_img(8, screen)  # ハートが割れる画像に変える
+                    score.update(screen)
+                    pg.display.update()
+                    time.sleep(2)  # 2秒間止まる
+                    return
+                
         screen.blit(boss_img, boss_rct)
         bird.update(key_lst, screen)
         beams.update()
@@ -361,9 +404,10 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
-        beam_B2.update()
-        beam_B2.draw(screen)
-
+        beam_B3.update()
+        beam_B3.draw(screen)
+        beam_B4.update()
+        beam_B4.draw(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
