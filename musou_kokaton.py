@@ -127,7 +127,8 @@ class Bomb(pg.sprite.Sprite):
         color = random.choice(__class__.colors)  # 爆弾円の色：クラス変数からランダム選択
         pg.draw.circle(self.image, color, (rad, rad), rad)
         self.image.set_colorkey((0, 0, 0))
-        self.rect = self.image.get_rect()  # 爆弾を投下するemyから見た攻撃対象のbirdの方向を計算
+        self.rect = self.image.get_rect()  
+        # 爆弾を投下するemyから見た攻撃対象のbirdの方向を計算
         self.vx, self.vy = calc_orientation(emy.rect, bird.rect)  
         self.rect.centerx = emy.rect.centerx
         self.rect.centery = emy.rect.centery+emy.rect.height//2
