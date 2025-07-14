@@ -106,7 +106,7 @@ class Bird(pg.sprite.Sprite):
         if self.status == "hyper":  # 無敵になる場合
             self.hyper_life -= 10  # 無敵時間は10フレーム減らす
             if self.hyper_life <= 0:  # 無敵時間が0になる場合
-                self.status = "normal"  # 通常に戻る
+                self.status = "normal"  # 通常状態に戻る
 
 
 class Bomb(pg.sprite.Sprite):
@@ -341,7 +341,8 @@ def main():
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
         for emy in emys:
-            if emy.state == "stop" and tmr%emy.interval == 0:  # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
+            if emy.state == "stop" and tmr%emy.interval == 0:  
+                # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
         
         if tmr % 25 == 0:  # 25フレームごとに左側からビーム(ボス側)を発射
@@ -352,7 +353,7 @@ def main():
         screen.blit(go_img,go_rct)  # 画像を黒くする
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # ハートと衝突した爆弾リスト 
-            if bird.status == "normal":  # 無敵状態でない場合
+            if bird.status == "normal":  # 通常状態の場合
                 score.value -= 5  # 爆弾に当たった場合5ダメージ受ける
 
             if score.value > 0:  # HPが残っている場合
