@@ -37,7 +37,7 @@ def calc_orientation(org: pg.Rect, dst: pg.Rect) -> tuple[float, float]:
     return x_diff/norm, y_diff/norm
 
 
-class Bird(pg.sprite.Sprite):
+class Heart(pg.sprite.Sprite):
     """
     ゲームキャラクター（こうかとん）に関するクラス
     """
@@ -110,39 +110,6 @@ class Bird(pg.sprite.Sprite):
     def get_rect(self) -> pg.Rect:
         return self.rect
 
-class Bomb(pg.sprite.Sprite):
-    """
-    爆弾に関するクラス
-    """
-    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
-
-    def __init__(self, emy: "Enemy", bird: Bird):
-        """
-        爆弾円Surfaceを生成する
-        引数1 emy：爆弾を投下する敵機
-        引数2 bird：攻撃対象のこうかとん
-        """
-        super().__init__()
-        rad = random.randint(10, 50)  # 爆弾円の半径：10以上50以下の乱数
-        self.image = pg.Surface((2*rad, 2*rad))
-        color = random.choice(__class__.colors)  # 爆弾円の色：クラス変数からランダム選択
-        pg.draw.circle(self.image, color, (rad, rad), rad)
-        self.image.set_colorkey((0, 0, 0))
-        self.rect = self.image.get_rect()  
-        # 爆弾を投下するemyから見た攻撃対象のbirdの方向を計算
-        self.vx, self.vy = calc_orientation(emy.rect, bird.rect)  
-        self.rect.centerx = emy.rect.centerx
-        self.rect.centery = emy.rect.centery+emy.rect.height//2
-        self.speed = 6
-
-    def update(self):
-        """
-        爆弾を速度ベクトルself.vx, self.vyに基づき移動させる
-        引数 screen：画面Surface
-        """
-        self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
-        if check_bound(self.rect) != (True, True):
-            self.kill()
 
 class BossBeam(pg.sprite.Sprite):
     """
@@ -167,20 +134,20 @@ class Beam(pg.sprite.Sprite):
     """
     ビームに関するクラス
     """
-    def __init__(self, bird: Bird):
+    def __init__(self, heart: Heart):
         """
         ビーム画像Surfaceを生成する
         引数 bird：ビームを放つこうかとん
         """
         super().__init__()
-        self.vx, self.vy = bird.dire
+        self.vx, self.vy = heart.dire
         angle = math.degrees(math.atan2(-self.vy, self.vx))
         self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1.0)
         self.vx = math.cos(math.radians(angle))
         self.vy = -math.sin(math.radians(angle))
         self.rect = self.image.get_rect()
-        self.rect.centery = bird.rect.centery+bird.rect.height*self.vy
-        self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
+        self.rect.centery = heart.rect.centery+heart.rect.height*self.vy
+        self.rect.centerx = heart.rect.centerx+heart.rect.width*self.vx
         self.speed = 10
 
     def update(self):
@@ -219,41 +186,13 @@ class Beam2(pg.sprite.Sprite):
             self.kill()  # ビームを消す
 
 
-class Explosion(pg.sprite.Sprite):
-    """
-    爆発に関するクラス
-    """
-    def __init__(self, obj: "Bomb|Enemy", life: int):
-        """
-        爆弾が爆発するエフェクトを生成する
-        引数1 obj：爆発するBombまたは敵機インスタンス
-        引数2 life：爆発時間
-        """
-        super().__init__()
-        img = pg.image.load(f"fig/explosion.gif")
-        self.imgs = [img, pg.transform.flip(img, 1, 1)]
-        self.image = self.imgs[0]
-        self.rect = self.image.get_rect(center=obj.rect.center)
-        self.life = life
-
-    def update(self):
-        """
-        爆発時間を1減算した爆発経過時間_lifeに応じて爆発画像を切り替えることで
-        爆発エフェクトを表現する
-        """
-        self.life -= 1
-        self.image = self.imgs[self.life//10%2]
-        if self.life < 0:
-            self.kill()
-
-
 class BossBall(pg.sprite.Sprite): 
     """
     ボスが発射する即死球の設定
     引数1 boss_rct ボスのRect（中心から弾を出す）
     引数2 bird 操作しているキャラの位置に向けて発射するための参照
     """ 
-    def __init__(self, boss_rct: pg.Rect, bird: Bird):
+    def __init__(self, boss_rct: pg.Rect, heart: Heart):
         super().__init__()
         radball = 15
         self.image = pg.Surface((2*radball, 2*radball))
@@ -423,7 +362,7 @@ def main():
     beam_se = pg.mixer.Sound("fig/beam.wav")
     bosshp = BossHP()
 
-    bird = Bird(3, (900, 400))
+    heart = Heart(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     boss_beams =pg.sprite.Group()
@@ -501,29 +440,25 @@ def main():
         if tmr%300 == 0 and tmr!=0:
             PLwaza=1
 
-        for emy in emys:
-            if emy.state is "stop" and tmr%emy.interval == 0:
-                # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
-                bombs.add(Bomb(emy, bird))
         if start.gamemode is "easy":
             if tmr % 400 == 0: # 400フレームに1回,即死球を出現させる。
-                bossballs.add(BossBall(boss_rct, bird))
+                bossballs.add(BossBall(boss_rct, heart))
         elif start.gamemode is "X":
             if tmr % 40 == 0: # 40フレームに1回,即死球を出現させる。
-                bossballs.add(BossBall(boss_rct, bird))
+                bossballs.add(BossBall(boss_rct, heart))
         else:
             if tmr % 100 == 0: # 100フレームに1回,即死球を出現させる。
-                bossballs.add(BossBall(boss_rct, bird))
+                bossballs.add(BossBall(boss_rct, heart))
 
         screen.blit(go_img,go_rct)
         
-        for bomb in pg.sprite.spritecollide(bird, beam_b2, True):  # ハートと衝突したビームリスト
+        for bomb in pg.sprite.spritecollide(heart, beam_b2, True):  # ハートと衝突したビームリスト
             if muteki<0:
                 hp.value -= 3
                 muteki=30
             else:
                 continue
-        for beam in pg.sprite.spritecollide(bird, boss_beams, True):
+        for beam in pg.sprite.spritecollide(heart, boss_beams, True):
             if muteki<0:
                 hp.value -= 2  # HPを5減らす
                 muteki=30
@@ -531,16 +466,16 @@ def main():
                 continue
         
         if muteki>0:
-            bird.image = pg.transform.laplacian(bird.image)
+            heart.image = pg.transform.laplacian(heart.image)
         elif PLwaza>=1:
-            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hartSP.png"), 0, 0.015)
+            heart.image = pg.transform.rotozoom(pg.image.load(f"fig/hartSP.png"), 0, 0.015)
         else:
-            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.015)
+            heart.image = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.015)
 
         if hp.value<=0:
             pg.mixer.music.stop()  # 戦闘BGMの停止
             hp.value=0
-            bird.change_img(8, screen)
+            heart.change_img(8, screen)
             fonto=pg.font.Font(None,80)
             txt = fonto.render("Game Over",True, (255,0,0))
             screen.blit(txt,[WIDTH//2-150,HEIGHT//2])
@@ -563,23 +498,23 @@ def main():
         if namida<0:
             boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
         
-        for ball in pg.sprite.spritecollide(bird, bossballs, True):  # 衝突したさいの即死球リスト
+        for ball in pg.sprite.spritecollide(heart, bossballs, True):  # 衝突したさいの即死球リスト
             if muteki<0:
                 hp.value=0 # 自分のHPを0にする。
             else:
                 continue
 
-        for beam in pg.sprite.spritecollide(bird, boss_beams, True):
+        for beam in pg.sprite.spritecollide(heart, boss_beams, True):
             hp.value -= 2  # HPを5減らす
             if hp.value <= 0:
-                bird.change_img(8, screen)
+                heart.change_img(8, screen)
                 hp.update(screen)
                 pg.display.update()
                 time.sleep(2)
                 return
 
         screen.blit(boss_img, boss_rct)
-        bird.update(key_lst, screen)
+        heart.update(key_lst, screen)
         beams.update
         beams.draw(screen)
         boss_beams.update()
