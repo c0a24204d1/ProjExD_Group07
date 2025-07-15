@@ -189,7 +189,7 @@ class Beam3(pg.sprite.Sprite):
         self.image.set_colorkey((0, 0, 0))  # 四隅の黒を透明化する
         self.rect = self.image.get_rect()  # ビーム画像のrect
         self.rect.center = (0, random.randint(50, HEIGHT - 50))  # 左側からランダムの位置を出現
-        self.x, self.y = +10, 0  # 右の方に移動 
+        self.x, self.y = +10, 0  # x座標とy座標の進む速さ
           
     def update(self):
         """
@@ -215,7 +215,7 @@ class Beam4(pg.sprite.Sprite):
         self.image.set_colorkey((0, 0, 0))  # 四隅の黒を透明化する
         self.rect = self.image.get_rect()  # ビーム画像のrect
         self.rect.center = (WIDTH, random.randint(50, HEIGHT - 50))  # 右端からランダムの位置に出現
-        self.x, self.y = -10, 0  # 左の方に移動  
+        self.x, self.y = -10, 0  # x座標とy座標の進む速さ
           
     def update(self):
         """
@@ -223,7 +223,7 @@ class Beam4(pg.sprite.Sprite):
         引数 screen：画面Surface
         """  
         self.rect.move_ip(self.x, self.y)  # ビームの速度に応じて位置を移動させる
-        if self.rect.left > WIDTH:  # 画面の左に着いたら
+        if self.rect.left < 0:  # 画面の左に着いたら
             self.kill()  # ビームを消す
 
 
@@ -350,7 +350,7 @@ def main():
         
         if tmr % 20 == 0:  # 20フレームごとに右側からビーム(ボス側)を発射
             beam_B4.add(Beam4())
-        screen.blit(go_img,go_rct)  # 画像を黒くする
+        screen.blit(go_img,go_rct)  # 黒の背景を表示させる
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # ハートと衝突した爆弾リスト 
             if bird.status == "normal":  # 通常状態の場合
