@@ -297,7 +297,7 @@ def main():
     tmr = 0
     clock = pg.time.Clock()
     go_img=pg.Surface((WIDTH,HEIGHT))
-    pg.draw.rect(go_img,(0,0,0),(0,0,WIDTH,HEIGHT))
+    pg.draw.rect(go_img,(0, 0, 0),(0, 0, WIDTH,HEIGHT))
     go_img.set_alpha(255)
     go_rct = go_img.get_rect()
     go_rct.center=WIDTH//2,HEIGHT//2
