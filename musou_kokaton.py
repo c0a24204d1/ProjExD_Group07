@@ -223,6 +223,39 @@ class Enemy(pg.sprite.Sprite):
         self.rect.move_ip(self.vx, self.vy)
 
 
+class BossBall(pg.sprite.Sprite): 
+    """
+    ボスが発射する即死球の設定
+    引数1 boss_rct ボスのRect（中心から弾を出す）
+    引数2 bird 操作しているキャラの位置に向けて発射するための参照
+    """ 
+    def __init__(self, boss_rct: pg.Rect, bird: Bird):
+        super().__init__()
+        radball = 15
+        self.image = pg.Surface((2*radball, 2*radball))
+        pg.draw.circle(self.image, (0, 0, 0), (radball, radball), radball)
+        self.image.set_colorkey((0, 0, 0))
+        pg.draw.circle(self.image, (255, 0, 0), (radball, radball), radball, 5)
+        self.rect = self.image.get_rect(center=boss_rct.center)
+        self.vx, self.vy = calc_orientation(self.rect, bird.rect)
+        self.speed = 2
+        self.frames = 0
+
+    def update(self):
+        """ 
+        移動・跳ね返り処理・寿命処理を行う 
+        """
+        self.rect.move_ip(self.speed * self.vx, self.speed * self.vy)
+        yoko, tate = check_bound(self.rect)
+        if not yoko:
+            self.vx *= -1  
+        if not tate:
+            self.vy *= -1  
+        self.frames += 1
+        if self.frames > 1000: # 1000フレーム後削除される。
+            self.kill()         
+
+
 class HP:
     """
     プレイヤーHP
@@ -360,7 +393,9 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
-    sla = pg.sprite.Group()
+    sla = pg.sprite.Group()    
+    bossballs = pg.sprite.Group() # 即死球を管理するグループ
+
     tmr = 0
     muteki=0
     PLwaza=0
@@ -408,8 +443,11 @@ def main():
             if emy.state == "stop" and tmr%emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
+        if tmr % 300 == 0: # 300フレームに1回,即死球を出現させる。
+            bossballs.add(BossBall(boss_rct, bird))
 
         screen.blit(go_img,go_rct)
+
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
             if muteki<0:
                 hp.value -= 2
@@ -449,6 +487,13 @@ def main():
         
         if namida<0:
             boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
+        
+        for ball in pg.sprite.spritecollide(bird, bossballs, True):  # 衝突したさいの即死球リスト
+            if muteki<0:
+                hp.value=0 # 自分のHPを0にする。
+            else:
+                continue
+
 
         screen.blit(boss_img, boss_rct)
         bird.update(key_lst, screen)
@@ -458,6 +503,8 @@ def main():
         emys.draw(screen)
         bombs.update()
         bombs.draw(screen)
+        bossballs.update() # 即死球を更新        
+        bossballs.draw(screen) # 即死球を画面に描画    
         exps.update()
         exps.draw(screen)
         hp.update(screen)
