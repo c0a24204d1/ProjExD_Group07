@@ -103,10 +103,10 @@ class Bird(pg.sprite.Sprite):
             self.image = self.imgs[self.dire]
         screen.blit(self.image, self.rect)
 
-        if self.status == "hyper":  # 無敵になる場合
+        if self.status == "hyper":  # 無敵状態の場合
             self.hyper_life -= 10  # 無敵時間は10フレーム減らす
             if self.hyper_life <= 0:  # 無敵時間が0になる場合
-                self.status = "normal"  # 通常状態に戻る
+                self.status = "normal"  # 通常状態にする
 
 
 class Bomb(pg.sprite.Sprite):
@@ -214,7 +214,7 @@ class Beam4(pg.sprite.Sprite):
         self.image = pg.transform.rotozoom(random.choice(__class__.imgs), 0, 3)  # 画像の角度と倍率を変えて生成する
         self.image.set_colorkey((0, 0, 0))  # 四隅の黒を透明化する
         self.rect = self.image.get_rect()  # ビーム画像のrect
-        self.rect.center = (WIDTH, random.randint(50, HEIGHT - 50))  # 右端からランダムの位置に出現
+        self.rect.center = (WIDTH, random.randint(50, HEIGHT - 50))  # 右側からランダムの位置に出現
         self.x, self.y = -10, 0  # x座標とy座標の進む速さ
           
     def update(self):
@@ -368,7 +368,7 @@ def main():
                 return
               
         for beam3 in pg.sprite.spritecollide(bird, beam_B3, True):  # ハートと衝突したビームリスト
-            if bird.status == "normal":  # 無敵状態でない場合
+            if bird.status == "normal":  # 通常状態の場合
                 score.value -= 4  # ビームに当たった場合4ダメージ受ける
                 if score.value > 0:  # HPが残っている場合
                     bird.status = "hyper"  # 無敵状態に切り替える
@@ -382,7 +382,7 @@ def main():
                     return
         
         for beam4 in pg.sprite.spritecollide(bird, beam_B4, True):  # ハートと衝突したビームリスト
-            if bird.status == "normal":  # 無敵状態でない場合
+            if bird.status == "normal":  # 通常状態の場合
                 score.value -= 4  # ビームに当たった場合4ダメージ受ける
                 if score.value > 0:  # HPが残っている場合
                     bird.status = "hyper"  # 無敵状態に切り替える
