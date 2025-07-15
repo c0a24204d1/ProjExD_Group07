@@ -314,6 +314,7 @@ def main():
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
     score = HP()
+
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
@@ -321,6 +322,7 @@ def main():
     emys = pg.sprite.Group()
     beam_B3 = pg.sprite.Group()  # 左から右のビーム用のグループオブジェクトを生成
     beam_B4 = pg.sprite.Group()  # 右から左のビーム用のグループオブジェクトを生成
+    
     tmr = 0
     clock = pg.time.Clock()
     go_img=pg.Surface((WIDTH,HEIGHT))
