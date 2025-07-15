@@ -231,7 +231,7 @@ class BossBall(pg.sprite.Sprite):
     """ 
     def __init__(self, boss_rct: pg.Rect, bird: Bird):
         super().__init__()
-        radball = 30
+        radball = 15
         self.image = pg.Surface((2*radball, 2*radball))
         pg.draw.circle(self.image, (0, 0, 0), (radball, radball), radball)
         self.image.set_colorkey((0, 0, 0))
@@ -240,6 +240,7 @@ class BossBall(pg.sprite.Sprite):
         self.vx, self.vy = calc_orientation(self.rect, bird.rect)
         self.speed = 2
         self.frames = 0
+
     def update(self):
         """ 
         移動・跳ね返り処理・寿命処理を行う 
@@ -251,7 +252,7 @@ class BossBall(pg.sprite.Sprite):
         if not tate:
             self.vy *= -1  
         self.frames += 1
-        if self.frames > 1000:
+        if self.frames > 1000: # 1000フレーム後削除される。
             self.kill()         
 
 
