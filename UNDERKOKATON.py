@@ -14,7 +14,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     """
     オブジェクトが画面内or画面外を判定し，真理値タプルを返す関数
-    引数：こうかとんや爆弾，ビームなどのRect
+    引数：ハートや爆弾，ビームなどのRect
     戻り値：横方向，縦方向のはみ出し判定結果（画面内：True／画面外：False）
     """
     yoko, tate = True, True
@@ -29,7 +29,7 @@ def calc_orientation(org: pg.Rect, dst: pg.Rect) -> tuple[float, float]:
     """
     orgから見て，dstがどこにあるかを計算し，方向ベクトルをタプルで返す
     引数1 org：爆弾SurfaceのRect
-    引数2 dst：こうかとんSurfaceのRect
+    引数2 dst：ハートSurfaceのRect
     戻り値：orgから見たdstの方向ベクトルを表すタプル
     """
     x_diff, y_diff = dst.centerx-org.centerx, dst.centery-org.centery
@@ -39,7 +39,7 @@ def calc_orientation(org: pg.Rect, dst: pg.Rect) -> tuple[float, float]:
 
 class Heart(pg.sprite.Sprite):
     """
-    ゲームキャラクター（こうかとん）に関するクラス
+    ゲームキャラクター（ハート）に関するクラス
     """
     delta = {  # 押下キーと移動量の辞書
         pg.K_UP: (0, -1),
@@ -50,13 +50,13 @@ class Heart(pg.sprite.Sprite):
 
     def __init__(self, num: int, xy: tuple[int, int]):
         """
-        こうかとん画像Surfaceを生成する
-        引数1 num：こうかとん画像ファイル名の番号
-        引数2 xy：こうかとん画像の位置座標タプル
+        ハート画像Surfaceを生成する
+        引数1 num：ハート画像ファイル名の番号
+        引数2 xy：ハート画像の位置座標タプル
         """
         super().__init__()
         img0 = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.015)
-        img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
+        img = pg.transform.flip(img0, True, False)  # デフォルトのハート
         self.imgs = {
             (+1, 0): img,  # 右
             (+1, -1): img,
@@ -77,8 +77,8 @@ class Heart(pg.sprite.Sprite):
 
     def change_img(self, num: int, screen: pg.Surface):
         """
-        こうかとん画像を切り替え，画面に転送する
-        引数1 num：こうかとん画像ファイル名の番号
+        ハート画像を切り替え，画面に転送する
+        引数1 num：ハート画像ファイル名の番号
         引数2 screen：画面Surface
         """
         self.image = pg.transform.rotozoom(pg.image.load(f"fig/hartbreak.png"), 0, 0.08)
@@ -86,7 +86,7 @@ class Heart(pg.sprite.Sprite):
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
-        押下キーに応じてこうかとんを移動させる
+        押下キーに応じてハートを移動させる
         引数1 key_lst：押下キーの真理値リスト
         引数2 screen：画面Surface
         """
@@ -127,35 +127,6 @@ class BossBeam(pg.sprite.Sprite):
 
     def update(self):
         self.rect.move_ip(self.vx * self.speed, self.vy * self.speed)
-        if check_bound(self.rect) != (True, True):
-            self.kill()
-
-class Beam(pg.sprite.Sprite):
-    """
-    ビームに関するクラス
-    """
-    def __init__(self, heart: Heart):
-        """
-        ビーム画像Surfaceを生成する
-        引数 bird：ビームを放つこうかとん
-        """
-        super().__init__()
-        self.vx, self.vy = heart.dire
-        angle = math.degrees(math.atan2(-self.vy, self.vx))
-        self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1.0)
-        self.vx = math.cos(math.radians(angle))
-        self.vy = -math.sin(math.radians(angle))
-        self.rect = self.image.get_rect()
-        self.rect.centery = heart.rect.centery+heart.rect.height*self.vy
-        self.rect.centerx = heart.rect.centerx+heart.rect.width*self.vx
-        self.speed = 10
-
-    def update(self):
-        """
-        ビームを速度ベクトルself.vx, self.vyに基づき移動させる
-        引数 screen：画面Surface
-        """
-        self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
         if check_bound(self.rect) != (True, True):
             self.kill()
 
@@ -289,7 +260,7 @@ class Slash(pg.sprite.Sprite):
     def update(self):
         self.life -= 1
         if self.life < 0:
-            self.kill()  # 以下衝突検知・破壊処理
+            self.kill()
 
 
 class Start:
@@ -329,7 +300,7 @@ class Start:
     def wait_for_key(self):
         """
         スペースキー入力があるまで動作を停止する
-        hキー入力でハードモード化（仮）
+        hキー入力でハードモード化
         """
         pg.mixer.music.load("fig/Battle_standby.mp3")
         pg.mixer.music.play(-1)
@@ -357,7 +328,6 @@ def main():
     pg.display.set_caption("UNDERKOKATON")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
-    # hp = HP()
     pg.mixer.init()
     beam_se = pg.mixer.Sound("fig/beam.wav")
     bosshp = BossHP()
