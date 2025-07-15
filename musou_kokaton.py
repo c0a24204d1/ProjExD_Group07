@@ -98,7 +98,7 @@ class Bird(pg.sprite.Sprite):
             self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
-            self.image = self.imgs[self.dire]
+            # self.image = self.imgs[self.dire]
         screen.blit(self.image, self.rect)
 
 
@@ -223,6 +223,39 @@ class Enemy(pg.sprite.Sprite):
         self.rect.move_ip(self.vx, self.vy)
 
 
+class BossBall(pg.sprite.Sprite): 
+    """
+    ボスが発射する即死球の設定
+    引数1 boss_rct ボスのRect（中心から弾を出す）
+    引数2 bird 操作しているキャラの位置に向けて発射するための参照
+    """ 
+    def __init__(self, boss_rct: pg.Rect, bird: Bird):
+        super().__init__()
+        radball = 15
+        self.image = pg.Surface((2*radball, 2*radball))
+        pg.draw.circle(self.image, (0, 0, 0), (radball, radball), radball)
+        self.image.set_colorkey((0, 0, 0))
+        pg.draw.circle(self.image, (255, 0, 0), (radball, radball), radball, 5)
+        self.rect = self.image.get_rect(center=boss_rct.center)
+        self.vx, self.vy = calc_orientation(self.rect, bird.rect)
+        self.speed = 2
+        self.frames = 0
+
+    def update(self):
+        """ 
+        移動・跳ね返り処理・寿命処理を行う 
+        """
+        self.rect.move_ip(self.speed * self.vx, self.speed * self.vy)
+        yoko, tate = check_bound(self.rect)
+        if not yoko:
+            self.vx *= -1  
+        if not tate:
+            self.vy *= -1  
+        self.frames += 1
+        if self.frames > 1000: # 1000フレーム後削除される。
+            self.kill()         
+
+
 class HP:
     """
     プレイヤーHP
@@ -249,19 +282,124 @@ class HP:
         screen.blit(self.txt,[WIDTH//2-140,HEIGHT-60])
 
 
+class BossHP:
+    """
+    ボスのHP
+    base=1200
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 30)
+        self.color = (255, 0, 0)
+        self.value = 1200
+        self.txt = self.font.render(f"HP: {self.value}/1200", 0, self.color)
+        self.image = pg.Surface((120,20))
+        pg.draw.rect(self.image,(255,0,0),(0,0,120,20))
+        self.image.set_alpha(255)
+        self.rect = self.image.get_rect()
+        self.rect2 = self.txt.get_rect()
+        self.rect.center = WIDTH//2, HEIGHT-600
+
+    def update(self, screen: pg.Surface):
+        self.image = pg.Surface((120,20))
+        pg.draw.rect(self.image,(255,0,0),(0,0,self.value//10,20))
+        self.image.set_alpha(255)
+        self.txt = self.font.render(f"HP: {self.value}/1200", 0, self.color)
+        screen.blit(self.image, self.rect)
+        screen.blit(self.txt,[WIDTH//2-240,HEIGHT-610])
+
+
+class Slash(pg.sprite.Sprite):
+    """
+    斬撃エフェクト
+    """
+    def __init__(self, life):
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/flash-effect.gif"), 0, 0.3)
+        self.image.set_alpha(255)  # 透明度
+        self.rect = self.image.get_rect()
+        self.rect.center = WIDTH//2,HEIGHT//2-180
+        self.life = life
+
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()  # 以下衝突検知・破壊処理
+
+
+class Start:
+    """
+    起動時の画面に関するクラス
+    """
+    def __init__(self):
+        self.running = True
+        self.clock = pg.time.Clock()
+        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        #self.gamemode = "normal"
+
+    def show_start_screen(self):
+        """
+        起動時の画面を表示する
+        黒背景、文字
+        """
+        self.black = pg.Surface((WIDTH,HEIGHT))
+        self.black.fill((0,0,0))
+        self.rect = self.black.get_rect()
+        self.screen.blit(self.black,(0,0))
+        self.draw_text("UNDERKOKATON",96,(255,255,255),WIDTH/2,HEIGHT/2)
+        self.draw_text("Press Space to play",36,(255,255,255),WIDTH/2,HEIGHT/2+120)
+        pg.display.flip()
+        self.wait_for_key()
+
+    def draw_text(self, text:str, size:int, color:tuple, x:float, y:float):
+        """
+        テキストを表示するための関数
+        """
+        font = pg.font.SysFont(None, size)
+        text_surface = font.render(text, True, color)
+        text_rect = text_surface.get_rect()
+        text_rect.midtop = (x, y)
+        self.screen.blit(text_surface, text_rect)
+        
+    def wait_for_key(self):
+        """
+        スペースキー入力があるまで動作を停止する
+        hキー入力でハードモード化（仮）
+        """
+        pg.mixer.music.load("fig/Battle_standby.mp3")
+        pg.mixer.music.play(-1)
+        while True:
+            self.clock.tick(50)  # 処理落ち防止
+            for event in pg.event.get():
+                if event.type == pg.QUIT:  # 右上の×が押されたら
+                    self.running = False  
+                    pg.mixer.music.stop()
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:  # スペースキーが押されたら
+                    pg.mixer.music.stop()
+                    return
+                # elif event.type == pg.KEYDOWN and event.key == pg.K_h:
+                #     waiting = False
+                #     self.gamemode = "hard"
+                    
 def main():
-    pg.display.set_caption("真！こうかとん無双")
+    pg.display.set_caption("UNDERKOKATON")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
-    score = HP()
+    hp = HP()
+    bosshp = BossHP()
 
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    sla = pg.sprite.Group()    
+    bossballs = pg.sprite.Group() # 即死球を管理するグループ
 
     tmr = 0
+    muteki=0
+    PLwaza=0
+    namida=0
     clock = pg.time.Clock()
     go_img=pg.Surface((WIDTH,HEIGHT))
     pg.draw.rect(go_img,(0,0,0),(0,0,WIDTH,HEIGHT))
@@ -272,28 +410,90 @@ def main():
     boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
     boss_rct = boss_img.get_rect()
     boss_rct.center = WIDTH//2,HEIGHT//2-180
+    start = Start()
+    start.show_start_screen()
+    if start.running is not True:
+        return
+    
+    pg.mixer.music.load("fig/bossbgm.mp3")  # 戦闘BGMの設定
+    pg.mixer.music.play(-1)  # 戦闘BGMを無限ループで再生
+    pg.mixer.music.set_volume(0.5)  # 戦闘BGMの音量を半分にする
+
     while True:
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE and PLwaza >=1:
+                bosshp.value -= 20
+                PLwaza=0
+                boss_img = pg.transform.rotozoom(pg.image.load(f"fig/8.png"), 0, 3)
+                namida=50
+                sla.add(Slash(50))
+                
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
 
+        if tmr%300 == 0 and tmr!=0:
+            PLwaza=1
+
         for emy in emys:
             if emy.state == "stop" and tmr%emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
+        if tmr % 300 == 0: # 300フレームに1回,即死球を出現させる。
+            bossballs.add(BossBall(boss_rct, bird))
 
         screen.blit(go_img,go_rct)
+
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-            score.update(screen)
+            if muteki<0:
+                hp.value -= 2
+                muteki=30
+            else:
+                continue
+        
+        if muteki>0:
+            bird.image = pg.transform.laplacian(bird.image)
+        elif PLwaza>=1:
+            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hartSP.png"), 0, 0.02)
+        else:
+            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.02)
+
+        if hp.value<=0:
+            pg.mixer.music.stop()  # 戦闘BGMの停止
+            hp.value=0
+            bird.change_img(8, screen)
+            fonto=pg.font.Font(None,80)
+            txt = fonto.render("Game Over",True, (255,0,0))
+            screen.blit(txt,[WIDTH//2-150,HEIGHT//2])
+            hp.update(screen)
             pg.display.update()
-            time.sleep(2)
-            return
+            time.sleep(2)                
+            return  # gameover
+        
+        if bosshp.value<=0:
+            pg.mixer.music.stop()  # 戦闘BGMの停止
+            bosshp.value=0
+            fonto=pg.font.Font(None,80)
+            txt = fonto.render("Game Clear",True, (255,255,0))
+            screen.blit(txt,[WIDTH//2-150,HEIGHT//2])
+            hp.update(screen)
+            pg.display.update()
+            time.sleep(2)                
+            return  # gameclear
+        
+        if namida<0:
+            boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
+        
+        for ball in pg.sprite.spritecollide(bird, bossballs, True):  # 衝突したさいの即死球リスト
+            if muteki<0:
+                hp.value=0 # 自分のHPを0にする。
+            else:
+                continue
+
 
         screen.blit(boss_img, boss_rct)
         bird.update(key_lst, screen)
@@ -303,16 +503,24 @@ def main():
         emys.draw(screen)
         bombs.update()
         bombs.draw(screen)
+        bossballs.update() # 即死球を更新        
+        bossballs.draw(screen) # 即死球を画面に描画    
         exps.update()
         exps.draw(screen)
-        score.update(screen)
+        hp.update(screen)
+        bosshp.update(screen)
+        sla.update()
+        sla.draw(screen)
         pg.display.update()
         tmr += 1
+        muteki-=1
+        namida-=1
         clock.tick(50)
 
 
 if __name__ == "__main__":
     pg.init()
+    pg.mixer.init()
     main()
     pg.quit()
     sys.exit()
