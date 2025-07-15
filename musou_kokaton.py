@@ -520,6 +520,7 @@ def main():
         screen.blit(go_img,go_rct)
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
+
             if muteki<0:
                 hp.value -= 2
                 muteki=30
@@ -577,6 +578,23 @@ def main():
                 hp.value=0 # 自分のHPを0にする。
             else:
                 continue
+
+
+            hp.value -= 2  # HPを5減らす
+            if hp.value <= 0:
+                bird.change_img(8, screen)
+                hp.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
+        for beam in pg.sprite.spritecollide(bird, boss_beams, True):
+            hp.value -= 2  # HPを5減らす
+            if hp.value <= 0:
+                bird.change_img(8, screen)
+                hp.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
 
 
         screen.blit(boss_img, boss_rct)
