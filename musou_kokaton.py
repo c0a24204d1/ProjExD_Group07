@@ -101,6 +101,8 @@ class Bird(pg.sprite.Sprite):
             self.image = self.imgs[self.dire]
         screen.blit(self.image, self.rect)
 
+    def get_rect(self) -> pg.Rect:
+        return self.rect
 
 class Bomb(pg.sprite.Sprite):
     """
@@ -136,6 +138,24 @@ class Bomb(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.kill()
 
+class BossBeam(pg.sprite.Sprite):
+    """
+    ボスが発射するビーム
+    """
+    def __init__(self, boss_rect: pg.Rect, direction: tuple[float, float]):
+        super().__init__()
+        angle = math.degrees(math.atan2(-direction[1], direction[0]))
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1)
+        self.rect = self.image.get_rect()
+        self.rect.center = boss_rect.center  # ボスの中心から発射
+
+        self.vx, self.vy = direction
+        self.speed = 7
+
+    def update(self):
+        self.rect.move_ip(self.vx * self.speed, self.vy * self.speed)
+        if check_bound(self.rect) != (True, True):
+            self.kill()
 
 class Beam(pg.sprite.Sprite):
     """
@@ -254,14 +274,18 @@ def main():
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
     score = HP()
+    pg.mixer.init()
+    beam_se = pg.mixer.Sound("fig/beam.wav")
 
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
+    boss_beams =pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
 
     tmr = 0
+    beam_pattern = 0  # 0:3方向, 1:5方向
     clock = pg.time.Clock()
     go_img=pg.Surface((WIDTH,HEIGHT))
     pg.draw.rect(go_img,(0,0,0),(0,0,WIDTH,HEIGHT))
@@ -279,7 +303,18 @@ def main():
                 return 0
         screen.blit(bg_img, [0, 0])
 
-        if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
+        if tmr % 100 == 0:  # 200フレームに1回，敵機を出現させる
+            beam_se.play()  # 効果音を鳴らす（beam.wav）
+            if beam_pattern == 0:
+                directions = [(-1, 1), (0, 1), (1, 1)]  # ↙ ↓ ↘
+            else:
+                directions = [(-1, 1), (-0.5, 1), (0, 1), (0.5, 1), (1, 1)]  # 5方向
+
+            for d in directions:
+                norm = math.sqrt(d[0]**2 + d[1]**2)
+                dir_vec = (d[0]/norm, d[1]/norm)
+                boss_beams.add(BossBeam(boss_rct, dir_vec))
+            beam_pattern = 1 - beam_pattern  # 交互切り替え
             emys.add(Enemy())
 
         for emy in emys:
@@ -294,11 +329,19 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+        for beam in pg.sprite.spritecollide(bird, boss_beams, True):
+            bird.change_img(8, screen)  # ハートが割れる画像に切り替え
+            score.update(screen)       # HPバー描画
+            pg.display.update()
+            time.sleep(2)
+            return
 
         screen.blit(boss_img, boss_rct)
         bird.update(key_lst, screen)
-        beams.update()
+        beams.update
         beams.draw(screen)
+        boss_beams.update()
+        boss_beams.draw(screen)
         emys.update()
         emys.draw(screen)
         bombs.update()
@@ -306,6 +349,12 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+        if tmr % 100 == 0:
+            directions = [(-1, 1), (0, 1), (1, 1)]  # ↙ ↓ ↘
+            for d in directions:
+                norm = math.sqrt(d[0] ** 2 + d[1] ** 2)
+                dir_vec = (d[0] / norm, d[1] / norm)
+                boss_beams.add(BossBeam(boss_rct, dir_vec))
         pg.display.update()
         tmr += 1
         clock.tick(50)
