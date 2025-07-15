@@ -105,7 +105,7 @@ class Bird(pg.sprite.Sprite):
         if self.status == "hyper":  # 無敵状態になっている場合
             self.hyper_life -= 10  # 無敵時間は10フレーム減らす
             if self.hyper_life <= 0:  # 無敵時間が0になる場合 +
-                self.status = "normal"  # 通常状態に戻る
+                self.status = "normal"  # 通常状態にする
 
 
 class Bomb(pg.sprite.Sprite):
