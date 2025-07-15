@@ -330,6 +330,7 @@ def main():
     go_img.set_alpha(255)
     go_rct = go_img.get_rect()
     go_rct.center=WIDTH//2,HEIGHT//2
+    
     boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
     boss_rct = boss_img.get_rect()
     boss_rct.center = WIDTH//2,HEIGHT//2-180
