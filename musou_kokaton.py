@@ -293,6 +293,61 @@ class Slash(pg.sprite.Sprite):
             self.kill()  # 以下衝突検知・破壊処理
 
 
+class Start:
+    """
+    起動時の画面に関するクラス
+    """
+    def __init__(self):
+        self.running = True
+        self.clock = pg.time.Clock()
+        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        #self.gamemode = "normal"
+
+    def show_start_screen(self):
+        """
+        起動時の画面を表示する
+        黒背景、文字
+        """
+        self.black = pg.Surface((WIDTH,HEIGHT))
+        self.black.fill((0,0,0))
+        self.rect = self.black.get_rect()
+        self.screen.blit(self.black,(0,0))
+        self.draw_text("UNDERKOKATON",96,(255,255,255),WIDTH/2,HEIGHT/2)
+        self.draw_text("Press Space to play",36,(255,255,255),WIDTH/2,HEIGHT/2+120)
+        pg.display.flip()
+        self.wait_for_key()
+
+    def draw_text(self, text:str, size:int, color:tuple, x:float, y:float):
+        """
+        テキストを表示するための関数
+        """
+        font = pg.font.SysFont(None, size)
+        text_surface = font.render(text, True, color)
+        text_rect = text_surface.get_rect()
+        text_rect.midtop = (x, y)
+        self.screen.blit(text_surface, text_rect)
+        
+    def wait_for_key(self):
+        """
+        スペースキー入力があるまで動作を停止する
+        hキー入力でハードモード化（仮）
+        """
+        pg.mixer.music.load("fig/Battle_standby.mp3")
+        pg.mixer.music.play(-1)
+        while True:
+            self.clock.tick(50)  # 処理落ち防止
+            for event in pg.event.get():
+                if event.type == pg.QUIT:  # 右上の×が押されたら
+                    self.running = False  
+                    pg.mixer.music.stop()
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:  # スペースキーが押されたら
+                    pg.mixer.music.stop()
+                    return
+                # elif event.type == pg.KEYDOWN and event.key == pg.K_h:
+                #     waiting = False
+                #     self.gamemode = "hard"
+                    
 def main():
     pg.display.set_caption("UNDERKOKATON")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -320,6 +375,14 @@ def main():
     boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
     boss_rct = boss_img.get_rect()
     boss_rct.center = WIDTH//2,HEIGHT//2-180
+    start = Start()
+    start.show_start_screen()
+    if start.running is not True:
+        return
+    
+    pg.mixer.music.load("fig/bossbgm.mp3")  # 戦闘BGMの設定
+    pg.mixer.music.play(-1)  # 戦闘BGMを無限ループで再生
+    pg.mixer.music.set_volume(0.5)  # 戦闘BGMの音量を半分にする
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -362,6 +425,7 @@ def main():
             bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.02)
 
         if hp.value<=0:
+            pg.mixer.music.stop()  # 戦闘BGMの停止
             hp.value=0
             bird.change_img(8, screen)
             fonto=pg.font.Font(None,80)
@@ -373,6 +437,7 @@ def main():
             return  # gameover
         
         if bosshp.value<=0:
+            pg.mixer.music.stop()  # 戦闘BGMの停止
             bosshp.value=0
             fonto=pg.font.Font(None,80)
             txt = fonto.render("Game Clear",True, (255,255,0))
@@ -408,6 +473,7 @@ def main():
 
 if __name__ == "__main__":
     pg.init()
+    pg.mixer.init()
     main()
     pg.quit()
     sys.exit()
