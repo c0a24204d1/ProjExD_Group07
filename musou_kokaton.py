@@ -324,17 +324,21 @@ def main():
 
         screen.blit(go_img,go_rct)
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-            score.update(screen)
-            pg.display.update()
-            time.sleep(2)
-            return
+            score.value -= 2  # HPを5減らす
+            if score.value <= 0:
+                bird.change_img(8, screen)
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
         for beam in pg.sprite.spritecollide(bird, boss_beams, True):
-            bird.change_img(8, screen)  # ハートが割れる画像に切り替え
-            score.update(screen)       # HPバー描画
-            pg.display.update()
-            time.sleep(2)
-            return
+            score.value -= 2  # HPを5減らす
+            if score.value <= 0:
+                bird.change_img(8, screen)
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
 
         screen.blit(boss_img, boss_rct)
         bird.update(key_lst, screen)
