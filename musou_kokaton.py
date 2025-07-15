@@ -520,6 +520,66 @@ def main():
         screen.blit(go_img,go_rct)
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
+
+            if muteki<0:
+                hp.value -= 2
+                muteki=30
+            else:
+                continue
+        
+        for bomb in pg.sprite.spritecollide(bird, beam_b2, True):  # ハートと衝突したビームリスト
+            if muteki<0:
+                hp.value -= 4
+                muteki=30
+            else:
+                continue
+        for beam in pg.sprite.spritecollide(bird, boss_beams, True):
+            if muteki<0:
+                hp.value -= 2  # HPを5減らす
+                muteki=30
+            else:
+                continue
+        
+        if muteki>0:
+            bird.image = pg.transform.laplacian(bird.image)
+        elif PLwaza>=1:
+            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hartSP.png"), 0, 0.02)
+        else:
+            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.02)
+
+        if hp.value<=0:
+            pg.mixer.music.stop()  # 戦闘BGMの停止
+            hp.value=0
+            bird.change_img(8, screen)
+            fonto=pg.font.Font(None,80)
+            txt = fonto.render("Game Over",True, (255,0,0))
+            screen.blit(txt,[WIDTH//2-150,HEIGHT//2])
+            hp.update(screen)
+            pg.display.update()
+            time.sleep(2)                
+            return  # gameover
+        
+        if bosshp.value<=0:
+            pg.mixer.music.stop()  # 戦闘BGMの停止
+            bosshp.value=0
+            fonto=pg.font.Font(None,80)
+            txt = fonto.render("Game Clear",True, (255,255,0))
+            screen.blit(txt,[WIDTH//2-150,HEIGHT//2])
+            hp.update(screen)
+            pg.display.update()
+            time.sleep(2)                
+            return  # gameclear
+        
+        if namida<0:
+            boss_img = pg.transform.rotozoom(pg.image.load(f"fig/7.png"), 0, 3)
+        
+        for ball in pg.sprite.spritecollide(bird, bossballs, True):  # 衝突したさいの即死球リスト
+            if muteki<0:
+                hp.value=0 # 自分のHPを0にする。
+            else:
+                continue
+
+
             hp.value -= 2  # HPを5減らす
             if hp.value <= 0:
                 bird.change_img(8, screen)
@@ -535,6 +595,7 @@ def main():
                 pg.display.update()
                 time.sleep(2)
                 return
+
 
         screen.blit(boss_img, boss_rct)
         bird.update(key_lst, screen)
@@ -552,6 +613,12 @@ def main():
         exps.draw(screen)
         hp.update(screen)
         bosshp.update(screen)
+        if tmr % 100 == 0:
+            directions = [(-1, 1), (0, 1), (1, 1)]  # ↙ ↓ ↘
+            for d in directions:
+                norm = math.sqrt(d[0] ** 2 + d[1] ** 2)
+                dir_vec = (d[0] / norm, d[1] / norm)
+                boss_beams.add(BossBeam(boss_rct, dir_vec))
         beam_b2.update()
         beam_b2.draw(screen)
         sla.update()
