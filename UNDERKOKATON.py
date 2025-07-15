@@ -55,7 +55,7 @@ class Bird(pg.sprite.Sprite):
         引数2 xy：こうかとん画像の位置座標タプル
         """
         super().__init__()
-        img0 = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.02)
+        img0 = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.015)
         img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
         self.imgs = {
             (+1, 0): img,  # 右
@@ -247,34 +247,6 @@ class Explosion(pg.sprite.Sprite):
             self.kill()
 
 
-class Enemy(pg.sprite.Sprite):
-    """
-    敵機に関するクラス
-    """
-    imgs = [pg.image.load(f"fig/alien{i}.png") for i in range(1, 4)]
-    
-    def __init__(self):
-        super().__init__()
-        self.image = pg.transform.rotozoom(random.choice(__class__.imgs), 0, 0.8)
-        self.rect = self.image.get_rect()
-        self.rect.center = random.randint(0, WIDTH), 0
-        self.vx, self.vy = 0, +6
-        self.bound = random.randint(50, HEIGHT//2)  # 停止位置
-        self.state = "down"  # 降下状態or停止状態
-        self.interval = random.randint(50, 300)  # 爆弾投下インターバル
-
-    def update(self):
-        """
-        敵機を速度ベクトルself.vyに基づき移動（降下）させる
-        ランダムに決めた停止位置_boundまで降下したら，_stateを停止状態に変更する
-        引数 screen：画面Surface
-        """
-        if self.rect.centery > self.bound:
-            self.vy = 0
-            self.state = "stop"
-        self.rect.move_ip(self.vx, self.vy)
-
-
 class BossBall(pg.sprite.Sprite): 
     """
     ボスが発射する即死球の設定
@@ -289,8 +261,10 @@ class BossBall(pg.sprite.Sprite):
         self.image.set_colorkey((0, 0, 0))
         pg.draw.circle(self.image, (255, 0, 0), (radball, radball), radball, 5)
         self.rect = self.image.get_rect(center=boss_rct.center)
-        self.vx, self.vy = calc_orientation(self.rect, bird.rect)
-        self.speed = 2
+        angle = random.uniform(0,360)
+        self.vx = math.cos(math.radians(angle))
+        self.vy = math.sin(math.radians(angle))
+        self.speed = 4
         self.frames = 0
 
     def update(self):
@@ -304,7 +278,7 @@ class BossBall(pg.sprite.Sprite):
         if not tate:
             self.vy *= -1  
         self.frames += 1
-        if self.frames > 1000: # 1000フレーム後削除される。
+        if self.frames > 3000: # 3000フレーム後削除される。
             self.kill()         
 
 
@@ -313,23 +287,24 @@ class HP:
     プレイヤーHP
     base=30
     """
-    def __init__(self):
+    def __init__(self,Numhp):
         self.font = pg.font.Font(None, 30)
         self.color = (255, 255, 0)
-        self.value = 30
-        self.txt = self.font.render(f"HP: {self.value}/30", 0, self.color)
-        self.image = pg.Surface((60, 20))
-        pg.draw.rect(self.image,(255, 255, 0),(0, 0, 60, 20))
+        self.value = Numhp
+        self.maxhp = self.value
+        self.txt = self.font.render(f"HP: {self.value}/{self.maxhp}", 0, self.color)
+        self.image = pg.Surface((self.maxhp*2, 20))
+        pg.draw.rect(self.image,(255, 255, 0),(0, 0, self.maxhp*2, 20))
         self.image.set_alpha(255)
         self.rect = self.image.get_rect()
         self.rect2 = self.txt.get_rect()
         self.rect.center = WIDTH//2, HEIGHT-50
 
     def update(self, screen: pg.Surface):
-        self.image = pg.Surface((60, 20))
+        self.image = pg.Surface((self.maxhp*2, 20))
         pg.draw.rect(self.image,(255, 255, 0),(0, 0, self.value*2, 20))
         self.image.set_alpha(255)
-        self.txt = self.font.render(f"HP: {self.value}/30", 0, self.color)
+        self.txt = self.font.render(f"HP: {self.value}/{self.maxhp}", 0, self.color)
         screen.blit(self.image, self.rect)
         screen.blit(self.txt, [WIDTH//2-140, HEIGHT-60])
 
@@ -386,7 +361,7 @@ class Start:
         self.running = True
         self.clock = pg.time.Clock()
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
-        #self.gamemode = "normal"
+        self.gamemode = "normal"
 
     def show_start_screen(self):
         """
@@ -429,15 +404,21 @@ class Start:
                 if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:  # スペースキーが押されたら
                     pg.mixer.music.stop()
                     return
-                # elif event.type == pg.KEYDOWN and event.key == pg.K_h:
-                #     waiting = False
-                #     self.gamemode = "hard"
+                elif event.type == pg.KEYDOWN and event.key == pg.K_h:
+                    self.gamemode = "hard"
+                    return
+                elif event.type == pg.KEYDOWN and event.key == pg.K_e:
+                    self.gamemode = "easy"
+                    return
+                elif event.type == pg.KEYDOWN and event.key == pg.K_x:
+                    self.gamemode = "X"
+                    return
                     
 def main():
     pg.display.set_caption("UNDERKOKATON")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
-    hp = HP()
+    # hp = HP()
     pg.mixer.init()
     beam_se = pg.mixer.Sound("fig/beam.wav")
     bosshp = BossHP()
@@ -457,6 +438,7 @@ def main():
     muteki=0
     PLwaza=0
     namida=0
+    At = 60
     clock = pg.time.Clock()
     go_img=pg.Surface((WIDTH,HEIGHT))
     pg.draw.rect(go_img,(0, 0, 0),(0, 0, WIDTH,HEIGHT))
@@ -469,9 +451,19 @@ def main():
     boss_rct.center = WIDTH//2,HEIGHT//2-180
     start = Start()
     start.show_start_screen()
+    hp=HP(50)
     if start.running is not True:
         return
-    
+    if start.gamemode is "hard":
+        hp.value = 30
+        hp.maxhp = 30
+    if start.gamemode is "easy":
+        hp.value = 80
+        hp.maxhp = 80
+        At = 100
+    if start.gamemode is "X":
+        hp.value = 1
+        hp.maxhp = 1
     pg.mixer.music.load("fig/bossbgm.mp3")  # 戦闘BGMの設定
     pg.mixer.music.play(-1)  # 戦闘BGMを無限ループで再生
     pg.mixer.music.set_volume(0.5)  # 戦闘BGMの音量を半分にする
@@ -482,7 +474,7 @@ def main():
             if event.type == pg.QUIT:
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE and PLwaza >=1:
-                bosshp.value -= 20
+                bosshp.value -= At
                 PLwaza=0
                 boss_img = pg.transform.rotozoom(pg.image.load(f"fig/8.png"), 0, 3)
                 namida=50
@@ -502,8 +494,7 @@ def main():
                 dir_vec = (d[0]/norm, d[1]/norm)
                 boss_beams.add(BossBeam(boss_rct, dir_vec))
             beam_pattern = 1 - beam_pattern  # 交互切り替え
-            emys.add(Enemy())
-        
+    
         if tmr % 10 == 0:  # 10フレームごとにビーム(ボス側)が発射
             beam_b2.add(Beam2())
 
@@ -511,25 +502,24 @@ def main():
             PLwaza=1
 
         for emy in emys:
-            if emy.state == "stop" and tmr%emy.interval == 0:
+            if emy.state is "stop" and tmr%emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
-        if tmr % 300 == 0: # 300フレームに1回,即死球を出現させる。
-            bossballs.add(BossBall(boss_rct, bird))
+        if start.gamemode is "easy":
+            if tmr % 400 == 0: # 400フレームに1回,即死球を出現させる。
+                bossballs.add(BossBall(boss_rct, bird))
+        elif start.gamemode is "X":
+            if tmr % 40 == 0: # 40フレームに1回,即死球を出現させる。
+                bossballs.add(BossBall(boss_rct, bird))
+        else:
+            if tmr % 100 == 0: # 100フレームに1回,即死球を出現させる。
+                bossballs.add(BossBall(boss_rct, bird))
 
         screen.blit(go_img,go_rct)
-
-        for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-
-            if muteki<0:
-                hp.value -= 2
-                muteki=30
-            else:
-                continue
         
         for bomb in pg.sprite.spritecollide(bird, beam_b2, True):  # ハートと衝突したビームリスト
             if muteki<0:
-                hp.value -= 4
+                hp.value -= 3
                 muteki=30
             else:
                 continue
@@ -543,9 +533,9 @@ def main():
         if muteki>0:
             bird.image = pg.transform.laplacian(bird.image)
         elif PLwaza>=1:
-            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hartSP.png"), 0, 0.02)
+            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hartSP.png"), 0, 0.015)
         else:
-            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.02)
+            bird.image = pg.transform.rotozoom(pg.image.load(f"fig/hart.png"), 0, 0.015)
 
         if hp.value<=0:
             pg.mixer.music.stop()  # 戦闘BGMの停止
@@ -579,14 +569,6 @@ def main():
             else:
                 continue
 
-
-            hp.value -= 2  # HPを5減らす
-            if hp.value <= 0:
-                bird.change_img(8, screen)
-                hp.update(screen)
-                pg.display.update()
-                time.sleep(2)
-                return
         for beam in pg.sprite.spritecollide(bird, boss_beams, True):
             hp.value -= 2  # HPを5減らす
             if hp.value <= 0:
@@ -595,7 +577,6 @@ def main():
                 pg.display.update()
                 time.sleep(2)
                 return
-
 
         screen.blit(boss_img, boss_rct)
         bird.update(key_lst, screen)
